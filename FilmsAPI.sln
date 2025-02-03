@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35514.174
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FilmsAPI", "FilmsAPI\FilmsAPI.csproj", "{549BAFE4-5847-41A6-96EC-98D379D8C443}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "models", "models", "{D47094DA-AFCD-4EBB-AC2F-3604258D23A4}"
+	ProjectSection(SolutionItems) = preProject
+		Actor.cs = Actor.cs
+		AgeRating.cs = AgeRating.cs
+		ApiResponse.cs = ApiResponse.cs
+		AuthRequest.cs = AuthRequest.cs
+		Favorites.cs = Favorites.cs
+		Genre.cs = Genre.cs
+		Movie.cs = Movie.cs
+		RegisterRequest.cs = RegisterRequest.cs
+		Review.cs = Review.cs
+		Role.cs = Role.cs
+		Studio.cs = Studio.cs
+		User.cs = User.cs
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{549BAFE4-5847-41A6-96EC-98D379D8C443}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{549BAFE4-5847-41A6-96EC-98D379D8C443}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{549BAFE4-5847-41A6-96EC-98D379D8C443}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{549BAFE4-5847-41A6-96EC-98D379D8C443}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
