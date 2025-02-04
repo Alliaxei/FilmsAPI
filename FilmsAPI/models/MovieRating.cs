@@ -12,10 +12,6 @@ public class MovieRating
     [JsonPropertyName("review_text")]
     public string? ReviewText { get; set; }
 
-
-    [JsonPropertyName("rating")]
-    public string Rating { get; set; }
-
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
