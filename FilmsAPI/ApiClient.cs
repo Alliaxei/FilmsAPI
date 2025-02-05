@@ -225,80 +225,10 @@ public class ApiClient
         return await GetAuthorizedAsync<Movie>($"/api/movies/{movieId}");
     }
 
-    public async Task<Movie?> UpdateMovie(int movieId, Movie movie, string filePath)
+    public async Task<Movie?> UpdateMovie(int movieId, Movie movie)
     {
-        if (!Auth)
-        {
-            Console.WriteLine("[Ошибка] Пользователь не аутентифицирован.");
-            throw new UnauthorizedAccessException("User is not authenticated.");
-        }
-
-        using var formData = new MultipartFormDataContent();
-        FileStream fileStream = null;
-
-        try
-        {
-            Console.WriteLine("[Отладка] Добавляем текстовые данные фильма...");
-            formData.Add(new StringContent(movie.Title), "title");
-            formData.Add(new StringContent(movie.ReleaseYear.ToString()), "release_year");
-            formData.Add(new StringContent(movie.Duration.ToString()), "duration");
-            formData.Add(new StringContent(movie.Description), "description");
-            formData.Add(new StringContent(movie.Studio.Id.ToString()), "studio_id");
-            formData.Add(new StringContent(movie.age_rating.Id.ToString()), "age_rating_id");
-            Console.WriteLine("[Отладка] Текстовые данные успешно добавлены.");
-
-            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
-            {
-                Console.WriteLine($"[Отладка] Загружаем файл: {filePath}");
-                fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                var streamContent = new StreamContent(fileStream);
-                formData.Add(streamContent, "photo", Path.GetFileName(filePath));
-                Console.WriteLine("[Отладка] Файл добавлен в форму данных.");
-            }
-            else
-            {
-                Console.WriteLine("[Предупреждение] Файл не найден или путь пуст. Фильм будет обновлён без изменения изображения.");
-            }
-
-            Console.WriteLine("[Отладка] Отправляем HTTP-запрос...");
-            var response = await _httpClient.PostAsync($"/api/movies/update/{movieId}", formData);
-
-            if (fileStream != null)
-            {
-                Console.WriteLine("[Отладка] Закрываем поток файла...");
-                fileStream.Close();
-            }
-
-            Console.WriteLine($"[Отладка] Ответ от сервера: {(int)response.StatusCode} {response.StatusCode}");
-            var responseContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine("[Отладка] Тело ответа:");
-            Console.WriteLine(responseContent);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                Console.WriteLine("[Ошибка] Не удалось обновить фильм.");
-                throw new Exception($"Request failed with status code {response.StatusCode}. Response: {responseContent}");
-            }
-
-            Console.WriteLine("[Отладка] Десериализуем ответ...");
-            var result = JsonSerializer.Deserialize<Movie>(responseContent);
-            Console.WriteLine($"[Отладка] Фильм успешно обновлён: {result?.Title}");
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("[Ошибка] Произошла ошибка при обновлении фильма:");
-            Console.WriteLine(ex.Message);
-            Console.WriteLine(ex.StackTrace);
-            throw;
-        }
-        finally
-        {
-            fileStream?.Dispose();
-        }
+        return await PostAuthorizedAsync<Movie, Movie>($"/api/movies/update/{movieId}", movie);
     }
-
 
     public async Task<bool> DeleteMovie(int movieId)
     {
@@ -320,7 +250,7 @@ public class ApiClient
         {
             Console.WriteLine("[Отладка] Добавляем текстовые данные фильма...");
             formData.Add(new StringContent(movie.Title), "title");
-            formData.Add(new StringContent(movie.ReleaseYear.ToString()), "release_year");
+            formData.Add(new StringContent(movie.release_year.ToString()), "release_year");
             formData.Add(new StringContent(movie.Duration.ToString()), "duration");
             formData.Add(new StringContent(movie.Description), "description");
             formData.Add(new StringContent(movie.Studio.Id.ToString()), "studio_id");
@@ -466,72 +396,10 @@ public class ApiClient
         }
     }
 
-    public async Task<Actor?> UpdateActor(Actor actor, string? filePath)
+    public async Task<Actor?> UpdateActor(int actorId, Actor actor)
     {
-        if (!Auth)
-        {
-            Console.WriteLine("[Ошибка] Пользователь не аутентифицирован.");
-            throw new UnauthorizedAccessException("User is not authenticated.");
-        }
-
-        using var formData = new MultipartFormDataContent();
-
-        try
-        {
-            Console.WriteLine("[Отладка] Добавляем текстовые данные актера...");
-            formData.Add(new StringContent(actor.FirstName), "name");
-            formData.Add(new StringContent(actor.BirthDate.ToString("yyyy-MM-dd")), "birth_date");
-            formData.Add(new StringContent(actor.Biography), "biography");
-            Console.WriteLine("[Отладка] Текстовые данные успешно добавлены.");
-
-            if (!string.IsNullOrEmpty(filePath))
-            {
-                try
-                {
-                    var streamContent = await GetPhotoContentAsync(filePath);
-                    formData.Add(streamContent, "photo", Path.GetFileName(filePath));
-                    Console.WriteLine("[Отладка] Файл добавлен в форму данных.");
-                }
-                catch (FileNotFoundException ex)
-                {
-                    Console.WriteLine($"[Предупреждение] {ex.Message}");
-                }
-            }
-            else
-            {
-                formData.Add(new StringContent(actor.PhotoFilePath ?? string.Empty), "photo");
-                Console.WriteLine("[Отладка] Используется предыдущее фото актера.");
-            }
-
-            Console.WriteLine("[Отладка] Отправляем HTTP-запрос...");
-            var response = await _httpClient.PostAsync($"/api/actors/update/{actor.Id}", formData);
-
-            Console.WriteLine($"[Отладка] Ответ от сервера: {(int)response.StatusCode} {response.StatusCode}");
-            var responseContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine("[Отладка] Тело ответа:");
-            Console.WriteLine(responseContent);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                Console.WriteLine("[Ошибка] Не удалось обновить актера.");
-                throw new Exception($"Request failed with status code {response.StatusCode}. Response: {responseContent}");
-            }
-
-            Console.WriteLine("[Отладка] Десериализуем ответ...");
-            var result = JsonSerializer.Deserialize<Actor>(responseContent);
-            Console.WriteLine($"[Отладка] Актер успешно обновлен: {result?.FirstName}");
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("[Ошибка] Произошла ошибка при обновлении актера:");
-            Console.WriteLine(ex.Message);
-            Console.WriteLine(ex.StackTrace);
-            throw;
-        }
+        return await PostAuthorizedAsync<Actor, Actor>($"/api/actors/update/{actorId}", actor);
     }
-
 
     #endregion
 
@@ -646,33 +514,6 @@ public class ApiClient
     #endregion
 
     #region Helpers
-
-    private async Task<StreamContent> GetPhotoContentAsync(string filePath)
-    {
-        if (Uri.TryCreate(filePath, UriKind.Absolute, out Uri? uri) && uri.Scheme.StartsWith("http"))
-        {
-            Console.WriteLine($"[Отладка] Загружаем изображение с URL: {filePath}");
-            using var httpClient = new HttpClient();
-            using var response = await httpClient.GetAsync(filePath);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new FileNotFoundException($"Не удалось загрузить изображение: {response.StatusCode}");
-            }
-
-            var stream = await response.Content.ReadAsStreamAsync();
-            return new StreamContent(stream);
-        }
-        else if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
-        {
-            Console.WriteLine($"[Отладка] Загружаем локальный файл: {filePath}");
-            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            return new StreamContent(fileStream);
-        }
-
-        throw new FileNotFoundException("Файл не найден или путь пуст.");
-    }
-
     private async Task<T?> GetAuthorizedAsync<T>(string endpoint)
     {
         if (!Auth) throw new UnauthorizedAccessException("User is not authenticated.");
@@ -846,7 +687,7 @@ class Program
 {
 static async Task Main(string[] args)
 {
-    string baseUrl = "https://1a7f0347-4740-48dd-a191-0d726e603854.tunnel4.com";
+    string baseUrl = "https://85d71e54-71a2-4eb1-9aa1-07f36ca62967.tunnel4.com";
     const string testToken = "5|sGTKmlKxXrZkBCrsF4PIBgroGr2tYYzZwndAqwMbdd9adcbd";
 
     var apiClient = new ApiClient(baseUrl);
@@ -870,88 +711,90 @@ static async Task Main(string[] args)
 
 
         #region Test GetAllMovies 
-        //try
-        //{
-        //    Console.WriteLine("Начинаем запрос списка фильмов...");
+        try
+        {
+            Console.WriteLine("Начинаем запрос списка фильмов...");
 
-        //    // Выполняем запрос для получения списка фильмов
-        //    var movies = await apiClient.GetMovies();
+            // Выполняем запрос для получения списка фильмов
+            var movies = await apiClient.GetMovies();
 
-        //    if (movies != null)
-        //    {
-        //        Console.WriteLine("Список фильмов получен успешно.");
-        //        Console.WriteLine($"Количество фильмов: {movies.Count}");
+            if (movies != null)
+            {
+                Console.WriteLine("Список фильмов получен успешно.");
+                Console.WriteLine($"Количество фильмов: {movies.Count}");
 
-        //        foreach (var movie in movies)
-        //        {
-        //            Console.WriteLine($"ID: {movie.Id}, Название: {movie.Title}, Год: {movie.ReleaseYear}");
-        //            Console.WriteLine($"Описание: {movie.Description}");
-        //            Console.WriteLine($"Длительность: {movie.Duration} минут");
-        //            Console.WriteLine($"Фото: {movie.Photo}");
-
-        //            // Вывод информации о студии
-        //            if (movie.Studio != null)
-        //            {
-        //                Console.WriteLine($"Студия: {movie.Studio.Name}");
-        //            }
-        //            else
-        //            {
-        //                Console.WriteLine("Студия: информация отсутствует");
-        //            }
-
-        //            // Вывод информации о возрастном рейтинге
-        //            if (movie.age_rating != null)
-        //            {
-        //                Console.WriteLine($"Возрастной рейтинг: {movie.age_rating.Age}+");
-        //            }
-        //            else
-        //            {
-        //                Console.WriteLine("Возрастной рейтинг: информация отсутствует");
-        //            }
+                foreach (var movie in movies)
+                {
+                    Console.WriteLine($"ID: {movie.Id}, Название: {movie.Title}, Год: {movie.release_year}");
+                    Console.WriteLine($"Описание: {movie.Description}");
+                    Console.WriteLine($"Длительность: {movie.Duration} минут");
+                    Console.WriteLine($"Фото: {movie.Photo}");
+                    Console.WriteLine($"год: {movie.release_year}");
 
 
+                    // Вывод информации о студии
+                    if (movie.Studio != null)
+                    {
+                        Console.WriteLine($"Студия: {movie.Studio.Name}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Студия: информация отсутствует");
+                    }
+
+                    // Вывод информации о возрастном рейтинге
+                    if (movie.age_rating != null)
+                    {
+                        Console.WriteLine($"Возрастной рейтинг: {movie.age_rating.Age}+");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Возрастной рейтинг: информация отсутствует");
+                    }
 
 
 
-        //            // Вывод информации о рейтингах
-        //            if (movie.Rating != null && movie.Rating.Any())
-        //            {
-        //                Console.WriteLine("Отзывы:");
-        //                foreach (var rating in movie.Rating)
-        //                {
-        //                    Console.WriteLine($"- Пользователь ID {rating.UsersId}: {rating.ReviewText} (Дата: {rating.CreatedAt})");
-        //                }
-        //            }
-        //            else
-        //            {
-        //                Console.WriteLine("Отзывы: информация отсутствует");
-        //            }
 
-        //            Console.WriteLine(new string('-', 40)); // Разделитель между фильмами
-        //        }
-        //    }
-        //    else
-        //    {
-        //        Console.WriteLine("Не удалось получить список фильмов.");
-        //    }
-        //}
-        //catch (Exception ex)
-        //{
-        //    // Логируем полную ошибку
-        //    Console.WriteLine("Произошла ошибка при получении списка фильмов:");
-        //    Console.WriteLine($"Ошибка: {ex.Message}");
 
-        //    // Проверка на тип ошибки, если это конкретная ошибка десериализации
-        //    if (ex is JsonException jsonEx)
-        //    {
-        //        Console.WriteLine("Ошибка в обработке JSON:");
-        //        Console.WriteLine($"Ошибка: {jsonEx.Message}");
-        //        Console.WriteLine($"Стек вызовов: {jsonEx.StackTrace}");
-        //    }
+                    // Вывод информации о рейтингах
+                    if (movie.Rating != null && movie.Rating.Any())
+                    {
+                        Console.WriteLine("Отзывы:");
+                        foreach (var rating in movie.Rating)
+                        {
+                            Console.WriteLine($"- Пользователь ID {rating.UsersId}: {rating.ReviewText} (Дата: {rating.CreatedAt})");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Отзывы: информация отсутствует");
+                    }
 
-        //    // Также можно вывести stack trace ошибки, если это необходимо
-        //    Console.WriteLine($"Стек вызовов: {ex.StackTrace}");
-        //}
+                    Console.WriteLine(new string('-', 40)); // Разделитель между фильмами
+                }
+            }
+            else
+            {
+                Console.WriteLine("Не удалось получить список фильмов.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Логируем полную ошибку
+            Console.WriteLine("Произошла ошибка при получении списка фильмов:");
+            Console.WriteLine($"Ошибка: {ex.Message}");
+
+            // Проверка на тип ошибки, если это конкретная ошибка десериализации
+            if (ex is JsonException jsonEx)
+            {
+                Console.WriteLine("Ошибка в обработке JSON:");
+                Console.WriteLine($"Ошибка: {jsonEx.Message}");
+                Console.WriteLine($"Стек вызовов: {jsonEx.StackTrace}");
+            }
+
+            // Также можно вывести stack trace ошибки, если это необходимо
+            Console.WriteLine($"Стек вызовов: {ex.StackTrace}");
+        }
         #endregion
 
         #region Test GetMovieById
@@ -995,30 +838,29 @@ static async Task Main(string[] args)
         #region Test UpdateMovie
         //try
         //{
-        //    int testMovieId = 12;
+        //    int testMovieId = 1; // Укажите ID фильма для теста
         //    Console.WriteLine($"Начинаем обновление фильма с ID: {testMovieId}...");
 
         //    // Создайте объект фильма для обновления
         //    var updatedMovie = new Movie
         //    {
         //        Id = testMovieId,
-        //        Title = "llfasdfljahsdflkhja slkdfj alksdjf", // Пример обновления названия
+        //        Title = "Updated Movie Title", // Пример обновления названия
         //        ReleaseYear = 2025,            // Пример обновления года
         //        Duration = 120,                // Пример обновления продолжительности
         //        Description = "Updated description for the movie.", // Пример обновления описания
+        //        Photo = "updated_photo.jpg",   // Пример обновления фото
         //        Studio = new Studio { Id = 1, Name = "Warner Bros" }, // Пример обновления студии
-        //        age_rating = new AgeRating { Id = 3, Age = 16 }, // Пример обновления рейтинга
+        //        AgeRating = new AgeRating { Id = 3, Age = 16 }, // Пример обновления рейтинга
         //        Rating = new List<MovieRating>(), // Если нужно, добавьте рейтинг
         //    };
-
-        //    string filePath = "istockphoto-1494804150-612x612.jpg"; // Путь к обновляемому изображению
 
         //    // Выводим объект для отладки перед отправкой
         //    Console.WriteLine("Объект для обновления:");
         //    Console.WriteLine($"Название: {updatedMovie.Title}, Год: {updatedMovie.ReleaseYear}");
 
         //    // Выполняем запрос на обновление фильма
-        //    var updatedMovieResponse = await apiClient.UpdateMovie(testMovieId, updatedMovie, filePath);
+        //    var updatedMovieResponse = await apiClient.UpdateMovie(testMovieId, updatedMovie);
 
         //    // Проверяем ответ от API
         //    if (updatedMovieResponse != null)
@@ -1049,7 +891,6 @@ static async Task Main(string[] args)
         //    Console.WriteLine($"Стек вызовов: {ex.StackTrace}");
         //}
         #endregion
-
 
         #region Test DeleteMovie
         //try
@@ -1318,60 +1159,58 @@ static async Task Main(string[] args)
         #endregion
 
         #region Test UpdateActor
-        try
-        {
-            int testActorId = 5;
-            Console.WriteLine($"Начинаем обновление актера с ID: {testActorId}...");
+        //try
+        //{
+        //    int testActorId = 5;
+        //    Console.WriteLine($"Начинаем обновление актера с ID: {testActorId}...");
 
-            // Создайте объект актера для обновления
-            var updatedActor = new Actor
-            {
-                Id = testActorId,
-                FirstName = "Updated Name",  // Пример обновления имени
-                BirthDate = new DateTime(1980, 5, 15),  // Пример обновления даты рождения
-                Biography = "Updated biography for the actor.",  // Пример обновления биографии
-                PhotoFilePath = "previous_photo.jpg" // Оставляем предыдущее фото, если новый путь не указан
-            };
+        //    // Создайте объект актера для обновления
+        //    var updatedActor = new Actor
+        //    {
+        //        Id = testActorId,
+        //        FirstName = "Updated First Name",  // Пример обновления имени
+        //        LastName = "Updated Last Name",    // Пример обновления фамилии
+        //        BirthDate = new DateTime(1980, 5, 15),  // Пример обновления даты рождения
+        //        Biography = "Updated biography for the actor.",  // Пример обновления биографии
+        //        PhotoFilePath = "updated_actor_photo.jpg",  // Пример обновления пути к фото
+        //    };
 
-            string? filePath = "C:\\Users\\Alex\\Desktop\\updated_actor_photo.jpg"; // Пример нового фото
+        //    // Выводим объект для отладки перед отправкой
+        //    Console.WriteLine("Объект для обновления:");
+        //    Console.WriteLine($"Имя: {updatedActor.FirstName} {updatedActor.LastName}, Дата рождения: {updatedActor.BirthDate.ToShortDateString()}");
 
-            // Выводим объект для отладки перед отправкой
-            Console.WriteLine("Объект для обновления:");
-            Console.WriteLine($"Имя: {updatedActor.FirstName}, Дата рождения: {updatedActor.BirthDate.ToShortDateString()}");
+        //    // Выполняем запрос на обновление актера
+        //    var updatedActorResponse = await apiClient.UpdateActor(testActorId, updatedActor);
 
-            // Выполняем запрос на обновление актера
-            var updatedActorResponse = await UpdateActor(testActorId, updatedActor, filePath);
+        //    // Проверяем ответ от API
+        //    if (updatedActorResponse != null)
+        //    {
+        //        Console.WriteLine("Актер успешно обновлен.");
+        //        Console.WriteLine($"ID: {updatedActorResponse.Id}, Имя: {updatedActorResponse.FirstName} {updatedActorResponse.LastName}, Дата рождения: {updatedActorResponse.BirthDate.ToShortDateString()}");
+        //    }
+        //    else
+        //    {
+        //        Console.WriteLine($"Не удалось обновить актера с ID {testActorId}. Ответ от API пустой.");
+        //    }
+        //}
+        //catch (Exception ex)
+        //{
+        //    // Логируем ошибку
+        //    Console.WriteLine("Произошла ошибка при обновлении актера:");
+        //    Console.WriteLine($"Ошибка: {ex.Message}");
 
-            // Проверяем ответ от API
-            if (updatedActorResponse != null)
-            {
-                Console.WriteLine("Актер успешно обновлен.");
-                Console.WriteLine($"ID: {updatedActorResponse.Id}, Имя: {updatedActorResponse.Name}, Дата рождения: {updatedActorResponse.BirthDate.ToShortDateString()}");
-            }
-            else
-            {
-                Console.WriteLine($"Не удалось обновить актера с ID {testActorId}. Ответ от API пустой.");
-            }
-        }
-        catch (Exception ex)
-        {
-            // Логируем ошибку
-            Console.WriteLine("Произошла ошибка при обновлении актера:");
-            Console.WriteLine($"Ошибка: {ex.Message}");
+        //    // Проверка на ошибку JSON-десериализации
+        //    if (ex is JsonException jsonEx)
+        //    {
+        //        Console.WriteLine("Ошибка в обработке JSON:");
+        //        Console.WriteLine($"Ошибка: {jsonEx.Message}");
+        //        Console.WriteLine($"Стек вызовов: {jsonEx.StackTrace}");
+        //    }
 
-            // Проверка на ошибку JSON-десериализации
-            if (ex is JsonException jsonEx)
-            {
-                Console.WriteLine("Ошибка в обработке JSON:");
-                Console.WriteLine($"Ошибка: {jsonEx.Message}");
-                Console.WriteLine($"Стек вызовов: {jsonEx.StackTrace}");
-            }
-
-            // Выводим stack trace ошибки
-            Console.WriteLine($"Стек вызовов: {ex.StackTrace}");
-        }
+        //    // Выводим stack trace ошибки
+        //    Console.WriteLine($"Стек вызовов: {ex.StackTrace}");
+        //}
         #endregion
-
 
 
 

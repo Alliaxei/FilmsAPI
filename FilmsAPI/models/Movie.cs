@@ -4,7 +4,7 @@ public class Movie
 {
     public int Id { get; set; }
     public string? Title { get; set; }
-    public int ReleaseYear { get; set; }
+    public string? release_year { get; set; }
     public int? Duration { get; set; }
     public string? Description { get; set; }
     public string? Photo { get; set; }
