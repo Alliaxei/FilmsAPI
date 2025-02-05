@@ -4,15 +4,15 @@ public class Actor
 {
     public int Id { get; set; }
 
-    public string FirstName { get; set; } = string.Empty;
+    public string first_name { get; set; } = string.Empty;
 
-    public string LastName { get; set; } = string.Empty;
+    public string last_name { get; set; } = string.Empty;
 
     [JsonPropertyName("birth_date")]
-    public DateTime BirthDate { get; set; }
+    public DateTime birth_date { get; set; }
 
     [JsonPropertyName("biography")]
-    public string? Biography { get; set; }
+    public string? biography { get; set; }
 
     public string? PhotoFilePath { get; set; }
 }
