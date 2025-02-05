@@ -624,7 +624,10 @@ public class ApiClient
         }
     }
 
-
+    public async Task<bool> DeleteActor(int actorId)
+    {
+        return await DeleteAuthorizedAsync($"/api/actors/{actorId}");
+    }
 
 
     #endregion
@@ -913,7 +916,7 @@ class Program
 {
 static async Task Main(string[] args)
 {
-    string baseUrl = "https://7894c2ce-0bfc-4e11-829e-bc6c29631eaa.tunnel4.com";
+    string baseUrl = "https://e49a2f2d-40ad-439e-a9c7-254f63886ec6.tunnel4.com";
     const string testToken = "81|YnEffzoPjg5Nfyy5pyHeeKzdRInjc6OMcsqWSuHX8aae70f2";
 
     var apiClient = new ApiClient(baseUrl);
@@ -1328,59 +1331,59 @@ static async Task Main(string[] args)
         #endregion
 
         #region Test DeleteActor
-        //try
-        //{
-        //    Console.WriteLine("Начинаем запрос на удаление актера...");
+        try
+        {
+            Console.WriteLine("Начинаем запрос на удаление актера...");
 
-        //    // Указываем ID актера, которого хотим удалить
-        //    int actorId = 2; // Пример ID актера
+            // Указываем ID актера, которого хотим удалить
+            int actorId = 6; // Пример ID актера
 
-        //    Console.WriteLine($"Попытка удалить актера с ID: {actorId}");
+            Console.WriteLine($"Попытка удалить актера с ID: {actorId}");
 
-        //    // Выполняем запрос для удаления актера
-        //    var result = await apiClient.DeleteActor(actorId);
+            // Выполняем запрос для удаления актера
+            var result = await apiClient.DeleteActor(actorId);
 
-        //    // Проверяем результат удаления
-        //    if (result)
-        //    {
-        //        Console.WriteLine($"Актер с ID {actorId} был успешно удален.");
-        //    }
-        //    else
-        //    {
-        //        Console.WriteLine($"Не удалось удалить актера с ID {actorId}. Возможно, актера не существует.");
-        //    }
-        //}
-        //catch (HttpRequestException httpEx)
-        //{
-        //    // Логируем ошибку при запросе
-        //    Console.WriteLine("Произошла ошибка при отправке запроса на удаление актера:");
-        //    Console.WriteLine($"Ошибка: {httpEx.Message}");
-        //    Console.WriteLine($"Стек вызовов: {httpEx.StackTrace}");
+            // Проверяем результат удаления
+            if (result)
+            {
+                Console.WriteLine($"Актер с ID {actorId} был успешно удален.");
+            }
+            else
+            {
+                Console.WriteLine($"Не удалось удалить актера с ID {actorId}. Возможно, актера не существует.");
+            }
+        }
+        catch (HttpRequestException httpEx)
+        {
+            // Логируем ошибку при запросе
+            Console.WriteLine("Произошла ошибка при отправке запроса на удаление актера:");
+            Console.WriteLine($"Ошибка: {httpEx.Message}");
+            Console.WriteLine($"Стек вызовов: {httpEx.StackTrace}");
 
-        //    // Логирование дополнительно, например, статус код ответа, если доступен
-        //    if (httpEx.InnerException is WebException webEx)
-        //    {
-        //        Console.WriteLine($"Статус ответа: {webEx.Status}");
-        //        if (webEx.Response is HttpWebResponse response)
-        //        {
-        //            Console.WriteLine($"Ответ от сервера: {response.StatusCode} {response.StatusDescription}");
-        //        }
-        //    }
-        //}
-        //catch (JsonException jsonEx)
-        //{
-        //    // Логируем ошибку при обработке JSON
-        //    Console.WriteLine("Ошибка при обработке ответа JSON:");
-        //    Console.WriteLine($"Ошибка: {jsonEx.Message}");
-        //    Console.WriteLine($"Стек вызовов: {jsonEx.StackTrace}");
-        //}
-        //catch (Exception ex)
-        //{
-        //    // Логируем общие ошибки
-        //    Console.WriteLine("Произошла непредвиденная ошибка:");
-        //    Console.WriteLine($"Ошибка: {ex.Message}");
-        //    Console.WriteLine($"Стек вызовов: {ex.StackTrace}");
-        //}
+            // Логирование дополнительно, например, статус код ответа, если доступен
+            if (httpEx.InnerException is WebException webEx)
+            {
+                Console.WriteLine($"Статус ответа: {webEx.Status}");
+                if (webEx.Response is HttpWebResponse response)
+                {
+                    Console.WriteLine($"Ответ от сервера: {response.StatusCode} {response.StatusDescription}");
+                }
+            }
+        }
+        catch (JsonException jsonEx)
+        {
+            // Логируем ошибку при обработке JSON
+            Console.WriteLine("Ошибка при обработке ответа JSON:");
+            Console.WriteLine($"Ошибка: {jsonEx.Message}");
+            Console.WriteLine($"Стек вызовов: {jsonEx.StackTrace}");
+        }
+        catch (Exception ex)
+        {
+            // Логируем общие ошибки
+            Console.WriteLine("Произошла непредвиденная ошибка:");
+            Console.WriteLine($"Ошибка: {ex.Message}");
+            Console.WriteLine($"Стек вызовов: {ex.StackTrace}");
+        }
         #endregion
 
         #region Test UpdateActor
@@ -1577,8 +1580,8 @@ static async Task Main(string[] args)
         //    {
         //        Username = "updateduser",
         //        Email = "updateduser@example.com",
-              
-               
+
+
         //    };
 
         //    // Выполняем запрос на обновление пользователя
