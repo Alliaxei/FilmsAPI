@@ -154,9 +154,9 @@ public class ApiClient
         }
     }
 
-    public async Task<User?> UpdateUser(User user, string token)
+    public async Task<User?> UpdateUser(User user)
     {
-        if (string.IsNullOrEmpty(token))
+        if (string.IsNullOrEmpty(_token))
         {
             throw new UnauthorizedAccessException("User is not authenticated.");
         }
@@ -206,7 +206,7 @@ public class ApiClient
 
             // Отправляем HTTP-запрос на обновление пользователя
             Console.WriteLine("[Отладка] Отправляем HTTP-запрос для обновления пользователя...");
-            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
             var response = await _httpClient.PostAsync($"/api/user/profile", formData);
 
             Console.WriteLine($"[Отладка] Ответ от сервера: {(int)response.StatusCode} {response.StatusCode}");
@@ -837,16 +837,16 @@ public class ApiClient
         return await HandleResponse<T>(response);
     }
 
-    public async Task<List<Favorite>?> GetFavoriteMovies(string token)
+    public async Task<List<Favorite>?> GetFavoriteMovies()
     {
         // Формируем URL для получения списка любимых фильмов
         string endpoint = "/api/movies/favorites";
 
         // Выполняем GET-запрос с авторизацией по токену
-        return await GetAuthorizedAsync<List<Favorite>>(endpoint, token);
+        return await GetAuthorizedAsync<List<Favorite>>(endpoint, _token);
     }
 
-    public async Task<bool> RemoveMovieFromFavorites(int movieId, string token)
+    public async Task<bool> RemoveMovieFromFavorites(int movieId)
     {
 
         string endpoint = $"/api/movies/{movieId}/favorite";
@@ -877,19 +877,16 @@ public class ApiClient
         }
     }
 
-    public async Task<bool> AddMovieToFavorites(int movieId, string token)
+    public async Task<bool> AddMovieToFavorites(int movieId)
     {
         string endpoint = $"/api/movies/{movieId}/favorite";
 
         try
         {
-            // Добавляем токен в заголовок Authorization
-            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
 
-            // Выполняем POST-запрос
             var response = await _httpClient.PostAsync(endpoint, null);
 
-            // Проверка на успешный ответ от сервера (статус код 200-299)
             if (response.IsSuccessStatusCode)
             {
                 Console.WriteLine("Фильм успешно добавлен в избранное.");
@@ -897,7 +894,6 @@ public class ApiClient
             }
             else
             {
-                // Логирование ошибки
                 Console.WriteLine($"Ошибка при добавлении фильма в избранное: {response.StatusCode}");
                 return false;
             }
