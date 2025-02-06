@@ -302,12 +302,12 @@ public class ApiClient
     #region Movies
     public async Task<List<Movie>?> GetMovies()
     {
-        return await GetAuthorizedAsync<List<Movie>>("/api/movies");
+        return await GetAsync<List<Movie>>("/api/movies");
     }
 
     public async Task<Movie?> GetMovieById(int movieId)
     {
-        return await GetAuthorizedAsync<Movie>($"/api/movies/{movieId}");
+        return await GetAsync<Movie>($"/api/movies/{movieId}");
     }
 
     public async Task<Movie?> UpdateMovie(Movie movie)
@@ -470,12 +470,12 @@ public class ApiClient
     #region Actors
     public async Task<List<Actor>?> GetActors()
     {
-        return await GetAuthorizedAsync<List<Actor>>("/api/actors");
+        return await GetAsync<List<Actor>>("/api/actors");
     }
 
     public async Task<Actor?> GetActorById(int actorId)
     {
-        return await GetAuthorizedAsync<Actor>($"/api/actors/{actorId}");
+        return await GetAsync<Actor>($"/api/actors/{actorId}");
     }
 
     public async Task<Actor?> AddActor(Actor actor, string filePath)
@@ -636,12 +636,12 @@ public class ApiClient
 
     public async Task<List<MovieRating>?> GetReviews()
     {
-        return await GetAuthorizedAsync<List<MovieRating>>("/api/ratings");
+        return await GetAsync<List<MovieRating>>("/api/ratings");
     }
 
     public async Task<MovieRating?> GetReviewById(int reviewId)
     {
-        return await GetAuthorizedAsync<MovieRating>($"/api/ratings/{reviewId}");
+        return await GetAsync<MovieRating>($"/api/ratings/{reviewId}");
     }
 
     public async Task<bool> DeleteReview(int reviewId)
@@ -669,12 +669,12 @@ public class ApiClient
 
     public async Task<List<Studio>?> GetStudios()
     {
-        return await GetAuthorizedAsync<List<Studio>>("/api/studios");
+        return await GetAsync<List<Studio>>("/api/studios");
     }
 
     public async Task<Studio?> GetStudioById(int studioId)
     {
-        return await GetAuthorizedAsync<Studio>($"/api/studios/{studioId}");
+        return await GetAsync<Studio>($"/api/studios/{studioId}");
     }
 
     public async Task<bool> DeleteStudio(int studioId)
@@ -702,12 +702,12 @@ public class ApiClient
     #region Genre
     public async Task<List<Genre>?> GetGenres()
     {
-        return await GetAuthorizedAsync<List<Genre>>("/api/genres");
+        return await GetAsync<List<Genre>>("/api/genres");
     }
 
     public async Task<Genre?> GetGenreById(int genreId)
     {
-        return await GetAuthorizedAsync<Genre>($"/api/genres/{genreId}");
+        return await GetAsync<Genre>($"/api/genres/{genreId}");
     }
 
     public async Task<bool> DeleteGenre(int genreId)
@@ -749,7 +749,11 @@ public class ApiClient
         var response = await _httpClient.GetAsync(endpoint);
         return await HandleResponse<T>(response);
     }
-
+    private async Task<T?> GetAsync<T>(string endpoint)
+    {
+        var response = await _httpClient.GetAsync(endpoint);
+        return await HandleResponse<T>(response);
+    }
     private async Task<TResponse?> PostAuthorizedAsync<TRequest, TResponse>(string endpoint, TRequest data)
     {
         if (!Auth)
@@ -765,11 +769,8 @@ public class ApiClient
 
         var jsonContent = JsonSerializer.Serialize(data, options);
 
-        // Преобразуем объект данных в JSON
-        //var jsonContent = JsonSerializer.Serialize(data);
         var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-        // Выполняем POST-запрос
         var response = await _httpClient.PostAsync(endpoint, content);
 
         // Логирование ошибки с подробностями
@@ -815,10 +816,10 @@ public class ApiClient
     #endregion
 
     #region Favorite
-    public async Task<List<Favorite>?> GetFavoriteMovies(int userId)
-    {
-        return await GetAuthorizedAsync<List<Favorite>>($"/api/movies/favorites{userId}");
-    }
+    //public async Task<List<Favorite>?> GetFavoriteMovies(int userId)
+    //{
+    //    return await GetAuthorizedAsync<List<Favorite>>($"/api/movies/favorites{userId}");
+    //}
 
     private async Task<T?> GetAuthorizedAsync<T>(string endpoint, string token)
     {
@@ -827,13 +828,12 @@ public class ApiClient
             throw new UnauthorizedAccessException("User is not authenticated.");
         }
 
-        // Добавляем токен в заголовки запроса
+      
         _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        // Выполняем GET-запрос
+
         var response = await _httpClient.GetAsync(endpoint);
 
-        // Обрабатываем ответ
         return await HandleResponse<T>(response);
     }
 
@@ -916,7 +916,7 @@ class Program
 {
 static async Task Main(string[] args)
 {
-    string baseUrl = "https://e49a2f2d-40ad-439e-a9c7-254f63886ec6.tunnel4.com";
+    string baseUrl = "https://6e19480a-11ef-4a5a-a3f1-2ff78176e6bc.tunnel4.com";
     const string testToken = "81|YnEffzoPjg5Nfyy5pyHeeKzdRInjc6OMcsqWSuHX8aae70f2";
 
     var apiClient = new ApiClient(baseUrl);
