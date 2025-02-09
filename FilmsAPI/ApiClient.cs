@@ -473,78 +473,47 @@ public class ApiClient
     public async Task<Movie?> AddMovie(Movie movie, string filePath)
     {
         if (!Auth)
-        {
-            Console.WriteLine("[Ошибка] Пользователь не аутентифицирован.");
             throw new UnauthorizedAccessException("User is not authenticated.");
-        }
 
         using var formData = new MultipartFormDataContent();
         FileStream fileStream = null;
 
         try
         {
-            Console.WriteLine("[Отладка] Добавляем текстовые данные фильма...");
             formData.Add(new StringContent(movie.Title), "title");
             formData.Add(new StringContent(movie.release_year.ToString()), "release_year");
             formData.Add(new StringContent(movie.Duration.ToString()), "duration");
             formData.Add(new StringContent(movie.Description), "description");
             formData.Add(new StringContent(movie.Studio.Id.ToString()), "studio_id");
             formData.Add(new StringContent(movie.age_rating.Id.ToString()), "age_rating_id");
-            Console.WriteLine("[Отладка] Текстовые данные успешно добавлены.");
+
+            if (movie.genres != null && movie.genres.Any())
+            {
+                foreach (var genre in movie.genres)
+                    formData.Add(new StringContent(genre.Id.ToString()), "genres[]");
+            }
 
             if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
             {
-                Console.WriteLine($"[Отладка] Загружаем файл: {filePath}");
                 fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                var streamContent = new StreamContent(fileStream);
-                formData.Add(streamContent, "photo", Path.GetFileName(filePath));
-                Console.WriteLine("[Отладка] Файл добавлен в форму данных.");
-            }
-            else
-            {
-                Console.WriteLine("[Предупреждение] Файл не найден или путь пуст. Фильм будет добавлен без изображения.");
+                formData.Add(new StreamContent(fileStream), "photo", Path.GetFileName(filePath));
             }
 
-            Console.WriteLine("[Отладка] Отправляем HTTP-запрос...");
             var response = await _httpClient.PostAsync("/api/movies/create", formData);
 
-            // Закрытие потока файла теперь гарантировано
-            if (fileStream != null)
-            {
-                Console.WriteLine("[Отладка] Закрываем поток файла...");
-                fileStream.Close();
-            }
+            fileStream?.Close();
 
-            Console.WriteLine($"[Отладка] Ответ от сервера: {(int)response.StatusCode} {response.StatusCode}");
             var responseContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine("[Отладка] Тело ответа:");
-            Console.WriteLine(responseContent);
-
             if (!response.IsSuccessStatusCode)
-            {
-                Console.WriteLine("[Ошибка] Не удалось добавить фильм.");
                 throw new Exception($"Request failed with status code {response.StatusCode}. Response: {responseContent}");
-            }
 
-            Console.WriteLine("[Отладка] Десериализуем ответ...");
-            var result = JsonSerializer.Deserialize<Movie>(responseContent);
-            Console.WriteLine($"[Отладка] Фильм успешно добавлен: {result?.Title}");
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("[Ошибка] Произошла ошибка при добавлении фильма:");
-            Console.WriteLine(ex.Message);
-            Console.WriteLine(ex.StackTrace);
-            throw;
+            return JsonSerializer.Deserialize<Movie>(responseContent);
         }
         finally
         {
             fileStream?.Dispose();
         }
     }
-
     #endregion
 
     #region Actors
@@ -1033,109 +1002,109 @@ static async Task Main(string[] args)
 
 
         #region Test GetAllMovies 
-        try
-        {
-            Console.WriteLine("Начинаем запрос списка фильмов...");
+        //try
+        //{
+        //    Console.WriteLine("Начинаем запрос списка фильмов...");
 
-            // Выполняем запрос для получения списка фильмов
-            var movies = await apiClient.GetMovies();
+        //    // Выполняем запрос для получения списка фильмов
+        //    var movies = await apiClient.GetMovies();
 
-            if (movies != null)
-            {
-                Console.WriteLine("Список фильмов получен успешно.");
-                Console.WriteLine($"Количество фильмов: {movies.Count}");
+        //    if (movies != null)
+        //    {
+        //        Console.WriteLine("Список фильмов получен успешно.");
+        //        Console.WriteLine($"Количество фильмов: {movies.Count}");
 
-                foreach (var movie in movies)
-                {
-                    Console.WriteLine($"ID: {movie.Id}, Название: {movie.Title}, Год: {movie.release_year}");
-                    Console.WriteLine($"Описание: {movie.Description}");
-                    Console.WriteLine($"Длительность: {movie.Duration} минут");
-                    Console.WriteLine($"Фото: {movie.Photo}");
-                    Console.WriteLine($"год: {movie.release_year}");
-
-
-                    // Вывод информации о студии
-                    if (movie.Studio != null)
-                    {
-                        Console.WriteLine($"Студия: {movie.Studio.Name}");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Студия: информация отсутствует");
-                    }
+        //        foreach (var movie in movies)
+        //        {
+        //            Console.WriteLine($"ID: {movie.Id}, Название: {movie.Title}, Год: {movie.release_year}");
+        //            Console.WriteLine($"Описание: {movie.Description}");
+        //            Console.WriteLine($"Длительность: {movie.Duration} минут");
+        //            Console.WriteLine($"Фото: {movie.Photo}");
+        //            Console.WriteLine($"год: {movie.release_year}");
 
 
-                    // Вывод информации о возрастном рейтинге
-                    if (movie.age_rating != null)
-                    {
-                        Console.WriteLine($"Возрастной рейтинг: {movie.age_rating.Age}+");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Возрастной рейтинг: информация отсутствует");
-                    }
+        //            // Вывод информации о студии
+        //            if (movie.Studio != null)
+        //            {
+        //                Console.WriteLine($"Студия: {movie.Studio.Name}");
+        //            }
+        //            else
+        //            {
+        //                Console.WriteLine("Студия: информация отсутствует");
+        //            }
 
 
+        //            // Вывод информации о возрастном рейтинге
+        //            if (movie.age_rating != null)
+        //            {
+        //                Console.WriteLine($"Возрастной рейтинг: {movie.age_rating.Age}+");
+        //            }
+        //            else
+        //            {
+        //                Console.WriteLine("Возрастной рейтинг: информация отсутствует");
+        //            }
 
 
 
-                    // Вывод информации о рейтингах
-                    if (movie.Rating != null && movie.Rating.Any())
-                    {
-                        Console.WriteLine("Отзывы:");
-                        foreach (var rating in movie.Rating)
-                        {
-                            Console.WriteLine($"- Пользователь ID {rating.UsersId}: {rating.ReviewText} (Дата: {rating.CreatedAt})");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Отзывы: информация отсутствует");
-                    }
 
-                    if (movie.genres != null)
-                    {
-                        Console.Write("Жанры есть");
-                    }
 
-                    if (movie.genres != null && movie.genres.Any())
-                    {
-                        Console.WriteLine("жанры:");
-                        foreach (var genre in movie.genres)
-                        {
-                            Console.WriteLine($"- есть жанры");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("жанры: информация отсутствует");
-                    }
+        //            // Вывод информации о рейтингах
+        //            if (movie.Rating != null && movie.Rating.Any())
+        //            {
+        //                Console.WriteLine("Отзывы:");
+        //                foreach (var rating in movie.Rating)
+        //                {
+        //                    Console.WriteLine($"- Пользователь ID {rating.UsersId}: {rating.ReviewText} (Дата: {rating.CreatedAt})");
+        //                }
+        //            }
+        //            else
+        //            {
+        //                Console.WriteLine("Отзывы: информация отсутствует");
+        //            }
 
-                    Console.WriteLine(new string('-', 40)); // Разделитель между фильмами
-                }
-            }
-            else
-            {
-                Console.WriteLine("Не удалось получить список фильмов.");
-            }
-        }
-        catch (Exception ex)
-        {
-            // Логируем полную ошибку
-            Console.WriteLine("Произошла ошибка при получении списка фильмов:");
-            Console.WriteLine($"Ошибка: {ex.Message}");
+        //            if (movie.genres != null)
+        //            {
+        //                Console.Write("Жанры есть");
+        //            }
 
-            // Проверка на тип ошибки, если это конкретная ошибка десериализации
-            if (ex is JsonException jsonEx)
-            {
-                Console.WriteLine("Ошибка в обработке JSON:");
-                Console.WriteLine($"Ошибка: {jsonEx.Message}");
-                Console.WriteLine($"Стек вызовов: {jsonEx.StackTrace}");
-            }
+        //            if (movie.genres != null && movie.genres.Any())
+        //            {
+        //                Console.WriteLine("жанры:");
+        //                foreach (var genre in movie.genres)
+        //                {
+        //                    Console.WriteLine($"- есть жанры");
+        //                }
+        //            }
+        //            else
+        //            {
+        //                Console.WriteLine("жанры: информация отсутствует");
+        //            }
 
-            // Также можно вывести stack trace ошибки, если это необходимо
-            Console.WriteLine($"Стек вызовов: {ex.StackTrace}");
-        }
+        //            Console.WriteLine(new string('-', 40)); // Разделитель между фильмами
+        //        }
+        //    }
+        //    else
+        //    {
+        //        Console.WriteLine("Не удалось получить список фильмов.");
+        //    }
+        //}
+        //catch (Exception ex)
+        //{
+        //    // Логируем полную ошибку
+        //    Console.WriteLine("Произошла ошибка при получении списка фильмов:");
+        //    Console.WriteLine($"Ошибка: {ex.Message}");
+
+        //    // Проверка на тип ошибки, если это конкретная ошибка десериализации
+        //    if (ex is JsonException jsonEx)
+        //    {
+        //        Console.WriteLine("Ошибка в обработке JSON:");
+        //        Console.WriteLine($"Ошибка: {jsonEx.Message}");
+        //        Console.WriteLine($"Стек вызовов: {jsonEx.StackTrace}");
+        //    }
+
+        //    // Также можно вывести stack trace ошибки, если это необходимо
+        //    Console.WriteLine($"Стек вызовов: {ex.StackTrace}");
+        //}
         #endregion
 
         #region Test GetMovieById
@@ -1269,50 +1238,70 @@ static async Task Main(string[] args)
         #endregion
 
         #region Test AddMovie
-        //try
-        //{
-        //    Console.WriteLine("Начинаем запрос для добавления фильма...");
+        try
+        {
+            Console.WriteLine("Начинаем запрос для добавления фильма...");
 
-        //    var newMovie = new Movie
-        //    {
-        //        Title = "New Filmmm",
-        //        release_year = "2001",
-        //        Duration = 169,
-        //        Description = "A sci-fi masterpiece by Christopher Nolan.",
-        //        Studio = new Studio { Id = 2 }, // ID студии
-        //        age_rating = new AgeRating { Id = 3 } // Возрастной рейтинг
-        //    };
+            // Создаем объект нового фильма
+            var newMovie = new Movie
+            {
+                Title = "New Filmmmakjsdhf",
+                release_year = "2002",
+                Duration = 169,
+                Description = "A sci-fi masterpiece by Christopher Nolan asdf",
+                Studio = new Studio { Id = 2 }, // ID студии
+                age_rating = new AgeRating { Id = 3 }, // Возрастной рейтинг
+                genres = new List<Genre> // Добавляем жанры
+        {
+            new Genre { Id = 1 }, // Жанр с ID 1
+            new Genre { Id = 2 }  // Жанр с ID 2
+        }
+            };
 
-        //    string posterPath = "D:\\pgoto.jpg";
+            string posterPath = "D:\\pgoto.jpg";
 
-        //    // Выполняем запрос на добавление фильма
-        //    var addedMovie = await apiClient.AddMovie(newMovie, posterPath);
+            // Выполняем запрос на добавление фильма
+            var addedMovie = await apiClient.AddMovie(newMovie, posterPath);
 
-        //    // Проверяем, что фильм был добавлен
-        //    if (addedMovie != null)
-        //    {
-        //        Console.WriteLine($"Фильм успешно добавлен: {addedMovie.Title}");
-        //        Console.WriteLine($"ID фильма: {addedMovie.Id}");
-        //        Console.WriteLine($"Год выпуска: {addedMovie.release_year}");
-        //        Console.WriteLine($"Продолжительность: {addedMovie.Duration} минут");
-        //        Console.WriteLine($"Описание: {addedMovie.Description}");
-        //        Console.WriteLine($"Студия: {addedMovie.Studio?.Id}");
-        //        Console.WriteLine($"Возрастной рейтинг: {addedMovie.age_rating?.Id}");
-        //    }
-        //    else
-        //    {
-        //        Console.WriteLine("Не удалось добавить фильм.");
-        //    }
-        //}
-        //catch (Exception ex)
-        //{
-        //    // Логируем ошибку
-        //    Console.WriteLine("Произошла ошибка при добавлении фильма:");
-        //    Console.WriteLine($"Ошибка: {ex.Message}");
+            // Проверяем, что фильм был добавлен
+            if (addedMovie != null)
+            {
+                Console.WriteLine($"Фильм успешно добавлен: {addedMovie.Title}");
+                Console.WriteLine($"ID фильма: {addedMovie.Id}");
+                Console.WriteLine($"Год выпуска: {addedMovie.release_year}");
+                Console.WriteLine($"Продолжительность: {addedMovie.Duration} минут");
+                Console.WriteLine($"Описание: {addedMovie.Description}");
+                Console.WriteLine($"Студия: {addedMovie.Studio?.Id}");
+                Console.WriteLine($"Возрастной рейтинг: {addedMovie.age_rating?.Id}");
 
-        //    // Дополнительный вывод стека ошибок для диагностики
-        //    Console.WriteLine($"Стек вызовов: {ex.StackTrace}");
-        //}
+                // Выводим информацию о жанрах
+                if (addedMovie.genres != null && addedMovie.genres.Any())
+                {
+                    Console.WriteLine("Жанры фильма:");
+                    foreach (var genre in addedMovie.genres)
+                    {
+                        Console.WriteLine($"- ID жанра: {genre.Id}, Название: {genre.Name}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Жанры не были добавлены к фильму.");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Не удалось добавить фильм.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Логируем ошибку
+            Console.WriteLine("Произошла ошибка при добавлении фильма:");
+            Console.WriteLine($"Ошибка: {ex.Message}");
+
+            // Дополнительный вывод стека ошибок для диагностики
+            Console.WriteLine($"Стек вызовов: {ex.StackTrace}");
+        }
         #endregion
 
 
