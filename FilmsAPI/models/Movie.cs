@@ -12,5 +12,6 @@ public class Movie
     public int? age_rating_id { get; set; }
     public Studio? Studio { get; set; }
     public AgeRating? age_rating { get; set; }
-    public List<MovieRating> Rating { get; set; } = new List<MovieRating>(); 
+    public List<MovieRating> Rating { get; set; } = new List<MovieRating>();
+    public List<Genre>? genres { get; set; }
 }
