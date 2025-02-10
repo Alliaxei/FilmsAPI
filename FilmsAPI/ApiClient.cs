@@ -487,18 +487,27 @@ public class ApiClient
             formData.Add(new StringContent(movie.Studio.Id.ToString()), "studio_id");
             formData.Add(new StringContent(movie.age_rating.Id.ToString()), "age_rating_id");
 
+            // Добавляем ссылку на фильм, если она есть
+            if (!string.IsNullOrEmpty(movie.watch_url))
+            {
+                formData.Add(new StringContent(movie.watch_url), "watch_url");
+            }
+
+            // Добавляем жанры, если они есть
             if (movie.genres != null && movie.genres.Any())
             {
                 foreach (var genre in movie.genres)
                     formData.Add(new StringContent(genre.Id.ToString()), "genres[]");
             }
 
+            // Добавляем файл, если путь указан и файл существует
             if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
             {
                 fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 formData.Add(new StreamContent(fileStream), "photo", Path.GetFileName(filePath));
             }
 
+            // Отправляем запрос
             var response = await _httpClient.PostAsync("/api/movies/create", formData);
 
             fileStream?.Close();
@@ -514,6 +523,7 @@ public class ApiClient
             fileStream?.Dispose();
         }
     }
+
     #endregion
 
     #region Actors
@@ -865,10 +875,6 @@ public class ApiClient
     #endregion
 
     #region Favorite
-    //public async Task<List<Favorite>?> GetFavoriteMovies(int userId)
-    //{
-    //    return await GetAuthorizedAsync<List<Favorite>>($"/api/movies/favorites{userId}");
-    //}
 
     private async Task<T?> GetAuthorizedAsync<T>(string endpoint, string token)
     {
@@ -886,31 +892,32 @@ public class ApiClient
         return await HandleResponse<T>(response);
     }
 
-    public async Task<List<Movie>?> GetFavoriteMovies()
+    public async Task<List<Favorite>?> GetFavoriteMovies()
     {
         try
         {
-            var result = await GetAuthorizedAsync<List<Movie>>("/api/movies/favorites", _token);
+            var movies = await GetAuthorizedAsync<List<Movie>>("/api/movies/favorites", _token);
 
-            if (result == null)
+            if (movies == null)
             {
                 Console.WriteLine("Получен пустой ответ от сервера.");
-            }
-            else
-            {
-                Console.WriteLine($"Успешно получено {result.Count} избранных фильмов.");
+                return null;
             }
 
-            return result;
+            Console.WriteLine($"Успешно получено {movies.Count} избранных фильмов.");
+
+            // Оборачиваем каждый фильм в объект Favorite
+            var favorites = movies.Select(movie => new Favorite { Movie = movie }).ToList();
+
+            return favorites;
         }
         catch (Exception ex)
         {
-         
-            Console.WriteLine($"StackTrace: {ex.StackTrace}");
+            Console.WriteLine($"Ошибка: {ex.Message}\nStackTrace: {ex.StackTrace}");
+            return null;
         }
-       
-        return null;
     }
+
 
     public async Task<bool> RemoveMovieFromFavorites(int movieId)
     {
@@ -978,8 +985,8 @@ class Program
 {
 static async Task Main(string[] args)
 {
-    string baseUrl = "https://64230489-b069-4e94-8ff0-5d1ab7c9b9b9.tunnel4.com";
-    const string testToken = "108|1Fvnaq26WIcRLylCKfnC0sHxyInSizH7m1jhvm7m14b15776";
+    string baseUrl = "https://7bfe76bf-30d5-4007-8c9c-fb607ba12306.tunnel4.com";
+    const string testToken = "1|qL1dAq3zhpFZ2I0KBWi14eInzT0hCuUw1H6j9LRRdf28e0cf";
 
     var apiClient = new ApiClient(baseUrl);
 
@@ -1148,7 +1155,7 @@ static async Task Main(string[] args)
         #region Test UpdateMovie
         //try
         //{
-        //    int testMovieId = 12; // Укажите ID фильма для теста
+        //    int testMovieId = 18; // Укажите ID фильма для теста
         //    Console.WriteLine($"Начинаем обновление фильма с ID: {testMovieId}...");
 
         //    // Создайте объект фильма для обновления
@@ -1157,11 +1164,11 @@ static async Task Main(string[] args)
         //        Id = testMovieId,
         //        Title = "Updated Movie Title", // Пример обновления названия
         //        release_year = "2000",            // Пример обновления года
-        //        Duration = 120,                // Пример обновления продолжительности
-        //        Description = "Updated description for the movie.", // Пример обновления описания
-        //        Studio = new Studio { Id = 1, Name = "Warner Bros" }, // Пример обновления студии
-        //        age_rating = new AgeRating { Id = 3, Age = 16 }, // Пример обновления рейтинга
-        //        Rating = new List<MovieRating>(), // Если нужно, добавьте рейтинг
+        //        Duration = 120,             
+        //        Description = "Updated description for the movie.", 
+        //        Studio = new Studio { Id = 1, Name = "Warner Bros" }, 
+        //        age_rating = new AgeRating { Id = 3, Age = 16 }, 
+        //        Rating = new List<MovieRating>(), 
         //    };
 
         //    // Выводим объект для отладки перед отправкой
@@ -1238,70 +1245,82 @@ static async Task Main(string[] args)
         #endregion
 
         #region Test AddMovie
-        try
-        {
-            Console.WriteLine("Начинаем запрос для добавления фильма...");
+        //try
+        //{
+        //    Console.WriteLine("Начинаем запрос для добавления фильма...");
 
-            // Создаем объект нового фильма
-            var newMovie = new Movie
-            {
-                Title = "New Filmmmakjsdhf",
-                release_year = "2002",
-                Duration = 169,
-                Description = "A sci-fi masterpiece by Christopher Nolan asdf",
-                Studio = new Studio { Id = 2 }, // ID студии
-                age_rating = new AgeRating { Id = 3 }, // Возрастной рейтинг
-                genres = new List<Genre> // Добавляем жанры
-        {
-            new Genre { Id = 1 }, // Жанр с ID 1
-            new Genre { Id = 2 }  // Жанр с ID 2
-        }
-            };
+        //    // Создаем объект нового фильма
+        //    var newMovie = new Movie
+        //    {
+        //        Title = "New Filmmmakjsdhf",
+        //        release_year = "2002",
+        //        Duration = 169,
+        //        Description = "A sci-fi masterpiece by Christopher Nolan asdf",
+        //        Studio = new Studio { Id = 2 }, // ID студии
+        //        age_rating = new AgeRating { Id = 3 }, // Возрастной рейтинг
+        //        genres = new List<Genre> // Добавляем жанры
+        //{
+        //    new Genre { Id = 1 }, // Жанр с ID 1
+        //    new Genre { Id = 2 }  // Жанр с ID 2
+        //},
+        //        watch_url = "https://kinogo.ec/"
+        //    };
 
-            string posterPath = "D:\\pgoto.jpg";
+        //    string posterPath = "D:\\pgoto.jpg";
 
-            // Выполняем запрос на добавление фильма
-            var addedMovie = await apiClient.AddMovie(newMovie, posterPath);
+        //    // Выполняем запрос на добавление фильма
+        //    var addedMovie = await apiClient.AddMovie(newMovie, posterPath);
 
-            // Проверяем, что фильм был добавлен
-            if (addedMovie != null)
-            {
-                Console.WriteLine($"Фильм успешно добавлен: {addedMovie.Title}");
-                Console.WriteLine($"ID фильма: {addedMovie.Id}");
-                Console.WriteLine($"Год выпуска: {addedMovie.release_year}");
-                Console.WriteLine($"Продолжительность: {addedMovie.Duration} минут");
-                Console.WriteLine($"Описание: {addedMovie.Description}");
-                Console.WriteLine($"Студия: {addedMovie.Studio?.Id}");
-                Console.WriteLine($"Возрастной рейтинг: {addedMovie.age_rating?.Id}");
+        //    // Проверяем, что фильм был добавлен
+        //    if (addedMovie != null)
+        //    {
+        //        Console.WriteLine($"Фильм успешно добавлен: {addedMovie.Title}");
+        //        Console.WriteLine($"ID фильма: {addedMovie.Id}");
+        //        Console.WriteLine($"Год выпуска: {addedMovie.release_year}");
+        //        Console.WriteLine($"Продолжительность: {addedMovie.Duration} минут");
+        //        Console.WriteLine($"Описание: {addedMovie.Description}");
+        //        Console.WriteLine($"Студия: {addedMovie.Studio?.Id}");
+        //        Console.WriteLine($"Возрастной рейтинг: {addedMovie.age_rating?.Id}");
 
-                // Выводим информацию о жанрах
-                if (addedMovie.genres != null && addedMovie.genres.Any())
-                {
-                    Console.WriteLine("Жанры фильма:");
-                    foreach (var genre in addedMovie.genres)
-                    {
-                        Console.WriteLine($"- ID жанра: {genre.Id}, Название: {genre.Name}");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Жанры не были добавлены к фильму.");
-                }
-            }
-            else
-            {
-                Console.WriteLine("Не удалось добавить фильм.");
-            }
-        }
-        catch (Exception ex)
-        {
-            // Логируем ошибку
-            Console.WriteLine("Произошла ошибка при добавлении фильма:");
-            Console.WriteLine($"Ошибка: {ex.Message}");
+        //        // Выводим информацию о жанрах
+        //        if (addedMovie.genres != null && addedMovie.genres.Any())
+        //        {
+        //            Console.WriteLine("Жанры фильма:");
+        //            foreach (var genre in addedMovie.genres)
+        //            {
+        //                Console.WriteLine($"- ID жанра: {genre.Id}, Название: {genre.Name}");
+        //            }
+        //        }
+        //        else
+        //        {
+        //            Console.WriteLine("Жанры не были добавлены к фильму.");
+        //        }
 
-            // Дополнительный вывод стека ошибок для диагностики
-            Console.WriteLine($"Стек вызовов: {ex.StackTrace}");
-        }
+        //        // Выводим ссылку на фильм
+        //        if (!string.IsNullOrEmpty(addedMovie.watch_url))
+        //        {
+        //            Console.WriteLine($"Ссылка на фильм: {addedMovie.watch_url}");
+        //        }
+        //        else
+        //        {
+        //            Console.WriteLine("Ссылка на фильм не была добавлена.");
+        //        }
+        //    }
+        //    else
+        //    {
+        //        Console.WriteLine("Не удалось добавить фильм.");
+        //    }
+        //}
+        //catch (Exception ex)
+        //{
+        //    // Логируем ошибку
+        //    Console.WriteLine("Произошла ошибка при добавлении фильма:");
+        //    Console.WriteLine($"Ошибка: {ex.Message}");
+
+        //    // Дополнительный вывод стека ошибок для диагностики
+        //    Console.WriteLine($"Стек вызовов: {ex.StackTrace}");
+        //}
+
         #endregion
 
 
@@ -2323,18 +2342,26 @@ static async Task Main(string[] args)
         //    {
         //        Console.WriteLine("Список любимых фильмов:\n");
 
-        //        // Перебираем каждый фильм и выводим его данные
-        //        foreach (var movie in favoriteMovies)
+        //        // Перебираем каждый объект Favorite и выводим данные о фильме
+        //        foreach (var favorite in favoriteMovies)
         //        {
-        //            Console.WriteLine("====================================");
-        //            Console.WriteLine($"ID: {movie.Id}");
-        //            Console.WriteLine($"Название: {movie.Title}");
-        //            Console.WriteLine($"Год выпуска: {movie.release_year}");
-        //            Console.WriteLine($"Продолжительность: {movie.Duration} минут");
-        //            Console.WriteLine($"Описание: {movie.Description}");
-        //            Console.WriteLine($"Фото: {movie.Photo}");
-        //            Console.WriteLine($"Студия ID: {movie.studio_id}");
-        //            Console.WriteLine("====================================\n");
+        //            // Проверяем, что объект Movie внутри Favorite не равен null
+        //            if (favorite.Movie != null)
+        //            {
+        //                Console.WriteLine("====================================");
+        //                Console.WriteLine($"ID: {favorite.Movie.Id}");
+        //                Console.WriteLine($"Название: {favorite.Movie.Title}");
+        //                Console.WriteLine($"Год выпуска: {favorite.Movie.release_year}");
+        //                Console.WriteLine($"Продолжительность: {favorite.Movie.Duration} минут");
+        //                Console.WriteLine($"Описание: {favorite.Movie.Description}");
+        //                Console.WriteLine($"Фото: {favorite.Movie.Photo}");
+        //                Console.WriteLine($"Студия ID: {favorite.Movie.studio_id}");
+        //                Console.WriteLine("====================================\n");
+        //            }
+        //            else
+        //            {
+        //                Console.WriteLine("Данные о фильме отсутствуют (Movie is null).");
+        //            }
         //        }
         //    }
         //    else

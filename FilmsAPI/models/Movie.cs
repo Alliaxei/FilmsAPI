@@ -14,4 +14,6 @@ public class Movie
     public AgeRating? age_rating { get; set; }
     public List<MovieRating> Rating { get; set; } = new List<MovieRating>();
     public List<Genre>? genres { get; set; }
+    public List<Actor>? actors { get; set; }
+    public string? watch_url { get; set; }
 }
